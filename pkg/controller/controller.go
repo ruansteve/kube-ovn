@@ -249,12 +249,12 @@ type Controller struct {
 	deleteAnpQueue workqueue.RateLimitingInterface
 	anpKeyMutex    keymutex.KeyMutex
 
-	banpsLister     anplister.BaselineAdminNetworkPolicyLister
-	banpsSynced     cache.InformerSynced
-	addBanpQueue    workqueue.RateLimitingInterface
-	updateBanpQueue workqueue.RateLimitingInterface
-	deleteBanpQueue workqueue.RateLimitingInterface
-	banpKeyMutex    keymutex.KeyMutex
+	banpsLister         anplister.BaselineAdminNetworkPolicyLister
+	banpsSynced         cache.InformerSynced
+	addBanpQueue        workqueue.RateLimitingInterface
+	updateBanpQueue     workqueue.RateLimitingInterface
+	deleteBanpQueue     workqueue.RateLimitingInterface
+	banpKeyMutex        keymutex.KeyMutex
 	csrLister           certListerv1.CertificateSigningRequestLister
 	csrSynced           cache.InformerSynced
 	addOrUpdateCsrQueue workqueue.RateLimitingInterface
@@ -816,12 +816,16 @@ func Run(ctx context.Context, config *Configuration) {
 			controller.anpPrioNameMap = make(map[int32]string, 100)
 			controller.anpNamePrioMap = make(map[string]int32, 100)
 		}
-	if _, err = csrInformer.Informer().AddEventHandler(cache.ResourceEventHandlerFuncs{
-		AddFunc:    controller.enqueueAddCsr,
-		UpdateFunc: controller.enqueueUpdateCsr,
-		// no need to add delete func for csr
-	}); err != nil {
-		util.LogFatalAndExit(err, "failed to add csr event handler")
+	}
+
+	if config.EnableOVNIPSec {
+		if _, err = csrInformer.Informer().AddEventHandler(cache.ResourceEventHandlerFuncs{
+			AddFunc:    controller.enqueueAddCsr,
+			UpdateFunc: controller.enqueueUpdateCsr,
+			// no need to add delete func for csr
+		}); err != nil {
+			util.LogFatalAndExit(err, "failed to add csr event handler")
+		}
 	}
 
 	controller.Run(ctx)
