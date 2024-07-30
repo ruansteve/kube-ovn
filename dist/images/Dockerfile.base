@@ -122,7 +122,7 @@ RUN --mount=type=bind,target=/packages,from=ovs-builder,source=/packages  \
     dpkg -i /packages/openvswitch-*.deb /packages/python3-openvswitch*.deb && \
     dpkg -i --ignore-depends=openvswitch-switch,openvswitch-common /packages/ovn-*.deb && \
     rm -rf /var/lib/openvswitch/pki/ && \
-    chown -R nobody: /var/lib/logrotate && \
+    chown -R nobody: /var/lib/logrotate /etc/strongswan* /etc/ipsec* /var/lib/openvswitch/ && \
     setcap CAP_SYS_NICE+eip $(readlink -f $(which nice)) && \
     setcap CAP_NET_RAW+eip $(readlink -f $(which arping)) && \
     setcap CAP_NET_RAW+eip $(readlink -f $(which ndisc6)) && \
