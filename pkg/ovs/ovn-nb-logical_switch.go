@@ -446,3 +446,53 @@ func (c *OVNNbClient) DeleteLogicalSwitchOp(lsName string) ([]ovsdb.Operation, e
 
 	return op, nil
 }
+
+// SetLogicalSwitchExternalIDs sets logical switch external ids
+func (c *OVNNbClient) SetLogicalSwitchExternalIDs(lsName string, externalIDs map[string]string) error {
+	ls, err := c.GetLogicalSwitch(lsName, false)
+	if err != nil {
+		klog.Error(err)
+		return fmt.Errorf("get logical switch %s: %w", lsName, err)
+	}
+	if ls == nil {
+		err = fmt.Errorf("logical switch port %s not found", lsName)
+		klog.Error(err)
+		return err
+	}
+	if ls.ExternalIDs == nil {
+		ls.ExternalIDs = make(map[string]string)
+	}
+
+	for k, v := range externalIDs {
+		ls.ExternalIDs[k] = v
+	}
+
+	if err := c.UpdateLogicalSwitch(ls, &ls.ExternalIDs); err != nil {
+		klog.Error(err)
+		return fmt.Errorf("set logical switch port %s external ids %v: %w", lsName, externalIDs, err)
+	}
+
+	return nil
+}
+
+// UpdateLogicalSwitch update logical switch
+func (c *OVNNbClient) UpdateLogicalSwitch(ls *ovnnb.LogicalSwitch, fields ...interface{}) error {
+	if ls == nil {
+		err := errors.New("logical switch is nil")
+		klog.Error(err)
+		return err
+	}
+
+	op, err := c.Where(ls).Update(ls, fields...)
+	if err != nil {
+		klog.Error(err)
+		return fmt.Errorf("generate operations for updating logical switch %s: %w", ls.Name, err)
+	}
+
+	if err = c.Transact("ls-update", op); err != nil {
+		klog.Error(err)
+		return fmt.Errorf("update logical switch port %s: %w", ls.Name, err)
+	}
+
+	return nil
+}
